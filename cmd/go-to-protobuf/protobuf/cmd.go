@@ -257,7 +257,7 @@ func Run(g *Generator) {
 			searchArgs = append(searchArgs, "-I", s)
 		}
 	}
-	args := append(searchArgs, fmt.Sprintf("--gogo_out=%s", g.OutputBase))
+	args := append(searchArgs, fmt.Sprintf("--gogofast_out=%s", g.OutputBase))
 
 	buf := &bytes.Buffer{}
 	if len(g.Conditional) > 0 {

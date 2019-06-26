@@ -51,7 +51,7 @@ func (g *genProtoIDL) PackageVars(c *generator.Context) []string {
 		}
 	}
 	return []string{
-		"option (gogoproto.marshaler_all) = true;",
+		/*"option (gogoproto.marshaler_all) = true;",
 		"option (gogoproto.stable_marshaler_all) = true;",
 		"option (gogoproto.sizer_all) = true;",
 		"option (gogoproto.goproto_stringer_all) = false;",
@@ -59,7 +59,7 @@ func (g *genProtoIDL) PackageVars(c *generator.Context) []string {
 		"option (gogoproto.unmarshaler_all) = true;",
 		"option (gogoproto.goproto_unrecognized_all) = false;",
 		"option (gogoproto.goproto_enum_prefix_all) = false;",
-		"option (gogoproto.goproto_getters_all) = false;",
+		"option (gogoproto.goproto_getters_all) = false;",*/
 		fmt.Sprintf("option go_package = %q;", g.localGoPackage.Name),
 	}
 }
@@ -386,9 +386,11 @@ func (b bodyGen) doStruct(sw *generator.SnippetWriter) error {
 		case field.Repeated:
 			fmt.Fprintf(out, "repeated ")
 		case field.Required:
-			fmt.Fprintf(out, "required ")
+			//proto3 removed required
+			//fmt.Fprintf(out, "required ")
 		default:
-			fmt.Fprintf(out, "optional ")
+			//proto3 removed optional
+			//fmt.Fprintf(out, "optional ")
 		}
 		sw.Do(`$.Type|local$ $.Name$ = $.Tag$`, field)
 		if len(field.Extras) > 0 {
@@ -476,6 +478,7 @@ func memberTypeToProtobufField(locator ProtobufLocator, field *protoField, t *ty
 		field.Type, err = locator.ProtoTypeFor(t)
 	case types.Builtin:
 		field.Type, err = locator.ProtoTypeFor(t)
+		field.Nullable = true
 	case types.Map:
 		valueField := &protoField{}
 		if err := memberTypeToProtobufField(locator, valueField, t.Elem); err != nil {
@@ -502,6 +505,7 @@ func memberTypeToProtobufField(locator ProtobufLocator, field *protoField, t *ty
 			field.Extras["(gogoproto.castvalue)"] = v
 		}
 		field.Map = true
+		field.Nullable = true
 	case types.Pointer:
 		if err := memberTypeToProtobufField(locator, field, t.Elem); err != nil {
 			return err
@@ -596,13 +600,17 @@ func protobufTagToField(tag string, field *protoField, m types.Member, t *types.
 
 	protoExtra := make(map[string]string)
 	for i, extra := range parts[3:] {
+		// TODO check we need this
+		if extra == "proto3" {
+			continue
+		}
 		parts := strings.SplitN(extra, "=", 2)
 		if len(parts) != 2 {
 			return fmt.Errorf("member %q of %q malformed 'protobuf' tag, tag %d should be key=value, got %q\n", m.Name, t.Name, i+4, extra)
 		}
 		switch parts[0] {
-		case "name":
-			protoExtra[parts[0]] = parts[1]
+		//case "name":
+		//	protoExtra[parts[0]] = parts[1]
 		case "casttype", "castkey", "castvalue":
 			parts[0] = fmt.Sprintf("(gogoproto.%s)", parts[0])
 			protoExtra[parts[0]] = strconv.Quote(parts[1])
@@ -738,9 +746,9 @@ func formatProtoFile(source []byte) ([]byte, error) {
 }
 
 func assembleProtoFile(w io.Writer, f *generator.File) {
-	w.Write(f.Header)
+	//w.Write(f.Header)
 
-	fmt.Fprint(w, "syntax = 'proto2';\n\n")
+	fmt.Fprint(w, "syntax = 'proto3';\n\n")
 
 	if len(f.PackageName) > 0 {
 		fmt.Fprintf(w, "package %s;\n\n", f.PackageName)
